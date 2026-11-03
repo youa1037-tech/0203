@@ -32,7 +32,7 @@ button:focus-visible{outline:2px dashed var(--wound);outline-offset:1px}
 
 .monitor{max-width:780px;margin:0 auto;background:var(--paper);border:3px solid var(--ink);clip-path:var(--notch);padding:14px 14px 10px}
 .frame{background:var(--dither);padding:7px;border:3px solid var(--ink)}
-.screen{position:relative;height:clamp(560px,84svh,720px);background:var(--ink);color:var(--ink);display:grid;grid-template-rows:minmax(0,1fr) auto auto;overflow:hidden}
+.screen{position:relative;height:clamp(560px,84svh,720px);background:var(--ink);color:var(--ink);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto;overflow:hidden}
 .base{display:flex;justify-content:space-between;align-items:center;margin-top:10px;letter-spacing:.08em}
 .grill{width:96px;height:15px;background:repeating-linear-gradient(to bottom,var(--ink) 0 2px,transparent 2px 5px)}
 .power{width:16px;height:16px;border:3px solid var(--ink)}
@@ -102,6 +102,11 @@ button:focus-visible{outline:2px dashed var(--wound);outline-offset:1px}
 /* taskbar */
 .taskbar{display:flex;align-items:center;gap:8px;background:var(--paper);border-top:2px solid var(--ink);padding:3px 8px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .taskbar .sp{flex:1}
+.taskbar>*{flex-shrink:0}
+.taskbar .tb-user{flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.where{gap:8px;align-items:flex-start}
+.where .ff{flex-shrink:0}
+.where #place{min-width:0}
 .chip{border:2px solid var(--ink);padding:0 6px}
 .chip.inv{background:var(--ink);color:var(--paper)}
 .revealed .tb-user{color:var(--wound);border-color:var(--wound)}
@@ -198,6 +203,7 @@ textarea.copy{width:100%;height:120px;font:12px/18px var(--f-ui);margin-top:8px;
   .icons{right:4px}
   .dialog{margin:0 6px 6px}
 }
+@media (max-width:400px){.tb-user .tbl{display:none}.taskbar{gap:6px;padding:3px 6px}}
 </style>
 
 <div class="monitor">
@@ -936,7 +942,7 @@ function renderNoise() {
 
 function applyState() {
   document.documentElement.classList.toggle('revealed', state.revealed);
-  $('tbUser').textContent = state.revealed ? '사용자 아케치 고로' : '사용자 ▒▒▒▒';
+  $('tbUser').innerHTML = '<span class="tbl">사용자 </span>' + (state.revealed ? '아케치 고로' : '▒▒▒▒');
   $('ico-folder').classList.toggle('unlocked', state.folder && !state.revealed);
   $('ico-folder').querySelector('.lab').textContent = state.folder ? '기록' : '???';
   $('dot').hidden = !state.unread;

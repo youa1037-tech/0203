@@ -1639,7 +1639,25 @@ $('ico-folder').onclick = () => {
 };
 
 /* ---------- start ---------- */
+function testSave() {
+  const s = DEF();
+  Object.assign(s, { loop: 4, stage: 'final', revealed: true, everRevealed: true, folder: true, letterDone: true, done58: true });
+  const h = (loop, day, choice, mem) => {
+    const ch = DAYMAP[day].choices({ loop, mem: 0 }).find(c => c.id === choice);
+    return { run: 1, loop, day, choice, label: ch ? ch.label : choice, mem, akechi: '' };
+  };
+  s.history = [h(1, '0114', 'bet', false), h(2, '0109', 'm', true), h(2, '0111', 'm', true), h(2, '0116', 'm', true), h(2, '0120', 'm', true), h(2, '0122', 'm', true)];
+  return s;
+}
 function start(data) {
+  let test = null;
+  try { test = new URLSearchParams(location.search).get('test'); } catch (e) {}
+  if (test === 'c') {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    state = testSave(); save(); applyState();
+    flow(finalScene(fresh()));
+    return;
+  }
   const saved = data && data.v === 3 ? data : load();
   state = saved ? Object.assign(DEF(), saved) : DEF();
   applyState();

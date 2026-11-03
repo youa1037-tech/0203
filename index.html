@@ -119,6 +119,9 @@ button:focus-visible{outline:2px dashed var(--wound);outline-offset:1px}
 .taskbar>*{flex-shrink:0}
 .taskbar .tb-user{flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .where{gap:8px;align-items:flex-start}
+#snow{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;image-rendering:pixelated}
+.endp{transition:background-color 5s ease,color 5s ease}
+.endp.night{background:var(--ink);color:var(--paper)}
 .where .ff{flex-shrink:0}
 .where #place{min-width:0}
 .chip{border:2px solid var(--ink);padding:0 6px}
@@ -224,6 +227,7 @@ textarea.copy{width:100%;height:120px;font:12px/18px var(--f-ui);margin-top:8px;
   <div class="frame">
     <div class="noise" id="noise" aria-hidden="true"></div>
     <div class="screen" id="screen">
+      <canvas id="snow" aria-hidden="true"></canvas>
       <div class="desk">
         <nav class="icons" aria-label="바탕화면">
           <button class="icon" id="ico-diary" data-ico="diary"><span class="lab">일기</span></button>
@@ -860,6 +864,7 @@ async function runLines(lines, T, waitLast = false, opts = {}) {
       await runLines(o.res, T, i < lines.length - 1 || waitLast, opts);
       continue;
     }
+    if (ffQuip) { ffQuip = false; setSkip(false); await showLine(A('……넘기고 싶지? 나도 그래.')); chk(T); await waitAdvance(T); setSkip(true); }
     await showLine(ln, ln[2] || opts);
     chk(T);
     if (ln[0] === 'g') continue;
@@ -872,7 +877,16 @@ function setSkip(on) {
   $('ff').setAttribute('aria-pressed', String(on));
   if (on && advancer) advance();
 }
-$('ff').addEventListener('click', e => { e.stopPropagation(); setSkip(!skipping); });
+let ffQuip = false;
+$('ff').addEventListener('click', e => {
+  e.stopPropagation();
+  const on = !skipping;
+  setSkip(on);
+  if (on && !state.ffSaid && state.stage === 'day' && !state.aMode && state.loop >= 2 && state.loop <= 3) {
+    const d = DAYMAP[dayOrder()[state.day]];
+    if (d && d.akechi) { ffQuip = true; state.ffSaid = true; save(); }
+  }
+});
 
 function setChoices(list) {
   if (list.length) setSkip(false);
@@ -1407,13 +1421,16 @@ async function showEndB(T, live) {
   const lines = ['밤이 지나간다.', '§' + fmtDate(2, 13), '소지로의 차를 타고 르블랑으로 돌아온다. 문 위의 종이 울린다.', '모두 돌아간 뒤.', '카운터 끝자리는 비어 있다.', '커피를 내린다. 컵을 하나만 꺼냈다가, 하나를 더 꺼낸다.', '^3월|10:20|그리고 3월.',
     '짐 가방을 들고 내려오자 소지로가 카운터에서 잔을 닦고 있다.',
     ...(state.cOK ? ['카운터 끝자리에 빈 잔이 하나 놓여 있다.', '「손님 왔었어요?」', '「조금 전에. 열기도 전인데 한 잔만 달라더군.」', '「장갑을 한쪽 두고 갔어. 칠칠맞기는.」', '검은 장갑이다. 카운터 끝자리가 아직 미지근하다.',
-      '도쿄를 떠나는 열차에 오른다.', '문이 닫히기 직전, 건너편 플랫폼 끝에서 누군가 손을 든다. 한 박자 늦게.', '입 모양이 보인다. 이번엔 들리지 않아도 안다.', '「내일 보자.」', '다시 보았을 때는 사람들 사이로 사라지고 없다.', '열차가 움직인다. 이번엔 되감기지 않는다.']
+      '도쿄를 떠나는 열차에 오른다.', '문이 닫히기 직전, 건너편 플랫폼 끝에서 누군가 손을 든다. 한 박자 늦게.', '입 모양이 보인다. 이번엔 들리지 않아도 안다.', '「내일 보자.」', '다시 보았을 때는 사람들 사이로 사라지고 없다.', '~열차가 움직인다. 이번엔 되감기지 않는다.']
     : ['「가냐.」', '카운터 위에 잔이 두 개 놓여 있다. 소지로가 하나를 슬쩍 치운다.', '「……버릇이 무섭긴 하네. 자꾸 두 잔 내릴 뻔한다니까.」',
       '도쿄를 떠나는 열차에 오른다. 창밖으로 플랫폼이 멀어진다.', '벤치에는 아무도 없다.'])];
-  e.innerHTML = `<div class="date">${fmtDate(2, 3)}</div>` + lines.map(t => t[0] === '§' ? `<p class="date2" data-tb="${esc(t.slice(1))}">${esc(t.slice(1))}</p>` : t[0] === '^' ? (([d, k, x]) => `<p data-tb="${esc(d)}" data-clock="${esc(k)}">${esc(x)}</p>`)(t.slice(1).split('|')) : `<p>${esc(t)}</p>`).join('');
+  e.innerHTML = `<div class="date">${fmtDate(2, 3)}</div>` + lines.map(t => t[0] === '§' ? `<p class="date2" data-tb="${esc(t.slice(1))}">${esc(t.slice(1))}</p>` : t[0] === '^' ? (([d, k, x]) => `<p data-tb="${esc(d)}" data-clock="${esc(k)}">${esc(x)}</p>`)(t.slice(1).split('|')) : t[0] === '~' ? `<p data-snow="resume">${esc(t.slice(1))}</p>` : `<p>${esc(t)}</p>`).join('');
+  const cNight = state.cOK && !state.cDone;
+  e.classList.toggle('night', cNight);
+  if (cNight) { snowOverride = 'frozen'; $('snow').style.zIndex = '16'; }
   e.hidden = false;
   const ps = [...e.querySelectorAll('p')];
-  const tbAt = p => { if (p.dataset.tb) $('tbDate').textContent = p.dataset.tb; if (p.dataset.clock) $('tbClock').textContent = p.dataset.clock; };
+  const tbAt = p => { if (p.dataset.tb) $('tbDate').textContent = p.dataset.tb; if (p.dataset.clock) $('tbClock').textContent = p.dataset.clock; if (p.dataset.snow && cNight) snowOverride = p.dataset.snow; };
   if (!live) { ps.forEach(p => { p.classList.add('show'); tbAt(p); }); }
   else {
     for (const p of ps) {
@@ -1461,6 +1478,8 @@ async function endingC(T, e) {
   startRealClock();
   while (!$('win-msg').hidden) await sleep(200);
   state.cDone = true; save();
+  $('endp').classList.remove('night');
+  snowOverride = 'melt';
 }
 
 function confirmNew() {
@@ -1479,7 +1498,8 @@ function confirmNew() {
 
 function newRun() {
   clearInterval(realClock);
-  state.betYes = false;
+  state.betYes = false; state.ffSaid = false;
+  snowReset();
   state.run++; state.loop = 1; state.day = 0; state.revealed = false; state.folder = false; state.unread = 0;
   state.letterDone = false; state.done58 = false; state.aMode = false; state.aCount = 0; state.idle = {}; state.cOK = false; state.cRead = false; state.cDone = false;
   $('endp').hidden = true; $('titlep').hidden = true; $('tbMsg').hidden = true;
@@ -1633,6 +1653,7 @@ function renderSys() {
       try { localStorage.removeItem(KEY); } catch (e) {}
       clearInterval(realClock);
       state = DEF();
+      snowReset();
       document.querySelectorAll('.ov').forEach(w2 => { w2.hidden = true; });
       $('endp').hidden = true; $('titlep').hidden = true; $('tbMsg').hidden = true;
       $('mini-msg').hidden = false; $('mini-diary').hidden = false;
@@ -1690,6 +1711,53 @@ function start(data) {
   else if (s === 'endB') { $('tbDate').textContent = fmtDate(2, 3); flow(showEndB(null, false)); }
   else flow(boot());
 }
+/* ---------- snow ---------- */
+const snowC = $('snow'), snowX = snowC.getContext('2d');
+let flakes = [], snowOverride = null, snowLast = 0;
+const SNOW = {
+  fall: { n: 46, vy: [0.15, 0.35], dx: 0.15 }, resume: { n: 46, vy: [0.15, 0.35], dx: 0.15 }, melt: { n: 0, vy: [0.2, 0.4], dx: 0.15 },
+  thin: { n: 24, vy: [0.45, 0.75], dx: 0.2 }, sleet: { n: 34, vy: [1.2, 1.8], dx: 0.6, streak: true }, up: { n: 30, vy: [-0.5, -0.25], dx: 0.1 }
+};
+function snowReset() { flakes = []; snowOverride = null; snowC.style.zIndex = ''; }
+function snowMode() {
+  if (reduced) return 'off';
+  if (snowOverride) return snowOverride;
+  const s = state.stage;
+  if (s === 'boot') return 'fall';
+  if (s === 'm58') return 'up';
+  if (s === 'day' && !state.aMode && state.loop <= 3) return ['fall', 'fall', 'thin', 'sleet'][state.loop];
+  return 'frozen';
+}
+const newFlake = (W, H, y) => ({ x: Math.random() * W, y, r: Math.random(), s: Math.random() < 0.15 ? 2 : 1, p: Math.random() * 6.28 });
+function snowTick(t) {
+  requestAnimationFrame(snowTick);
+  if (document.hidden || t - snowLast < 33) return;
+  snowLast = t;
+  const W = Math.ceil(snowC.clientWidth / 2), H = Math.ceil(snowC.clientHeight / 2);
+  if (!W || !H) return;
+  if (snowC.width !== W || snowC.height !== H) { snowC.width = W; snowC.height = H; }
+  snowX.clearRect(0, 0, W, H);
+  const mode = snowMode();
+  if (mode === 'off') { flakes = []; return; }
+  const cfg = SNOW[mode];
+  if (!cfg) { while (flakes.length < 36) flakes.push(newFlake(W, H, Math.random() * H)); }
+  else {
+    if (!flakes.length) while (flakes.length < cfg.n) flakes.push(newFlake(W, H, Math.random() * H));
+    else if (flakes.length < cfg.n) flakes.push(newFlake(W, H, cfg.vy[0] < 0 ? H + 1 : -2));
+    else if (flakes.length > cfg.n && mode !== 'melt') flakes.pop();
+    for (const f of flakes) {
+      f.y += cfg.vy[0] + f.r * (cfg.vy[1] - cfg.vy[0]);
+      f.x = (f.x + Math.sin(t / 900 + f.p) * cfg.dx * 0.5 + (cfg.streak ? cfg.dx : 0) + W) % W;
+      if (f.y > H + 2) { if (mode === 'melt') f.dead = true; else { f.y = -2; f.x = Math.random() * W; } }
+      if (f.y < -3) { f.y = H + 1; f.x = Math.random() * W; }
+    }
+    if (mode === 'melt') flakes = flakes.filter(f => !f.dead);
+  }
+  snowX.fillStyle = getComputedStyle(screen).getPropertyValue('--paper').trim() || '#E8E1CC';
+  for (const f of flakes) snowX.fillRect(Math.round(f.x), Math.round(f.y), f.s, cfg && cfg.streak ? 3 : f.s);
+}
+requestAnimationFrame(snowTick);
+
 let awayLine = false;
 document.addEventListener('visibilitychange', () => {
   const tense = state.stage === 'final' || state.stage === 'await' || (state.stage === 'day' && (state.aMode || dayOrder()[state.day] === '0202'));

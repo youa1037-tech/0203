@@ -54,6 +54,8 @@ button:focus-visible{outline:2px dashed var(--wound);outline-offset:1px}
 /* desk */
 .desk{position:relative;min-height:0}
 .icons{position:absolute;right:8px;top:10px;bottom:6px;display:flex;flex-flow:column wrap-reverse;align-content:flex-start;gap:6px 4px;z-index:5}
+.icons{pointer-events:none}
+.icons .icon{pointer-events:auto}
 .icon{background:none;border:0;color:var(--paper);display:flex;flex-direction:column;align-items:center;gap:2px;width:56px;cursor:pointer;padding:2px 0;position:relative}
 .icon .lab{padding:0 4px}
 .icon:hover .lab,.icon:focus-visible .lab{background:var(--paper);color:var(--ink)}

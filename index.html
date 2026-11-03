@@ -1069,7 +1069,7 @@ async function boot() {
   $('place').textContent = 'YUYE OS';
   $('tbDate').textContent = '-- / --';
   $('tbClock').textContent = '--:--';
-  for (const l of [S('주의 · 이 게임에는 화면이 번쩍이거나 깜빡이고 흔들리는 연출이 있습니다.'), S('빛에 민감하신 분은 플레이에 주의해 주세요. 기기의 \'동작 줄이기\' 설정을 켜면 효과가 줄어듭니다.'), S('추천 · 사카모토 류이치 「Merry Christmas Mr. Lawrence」를 틀어두고 플레이해 보세요.'), S('글꼴 · 갈무리(Galmuri) © 2019–2025 Lee Minseo · SIL Open Font License 1.1')]) { await showLine(l, { instant: true }); chk(T); }
+  for (const l of [S('주의 · 이 게임에는 화면이 번쩍이거나 깜빡이고 흔들리는 연출이 있습니다.'), S('빛에 민감하신 분은 플레이에 주의해 주세요. 기기의 \'동작 줄이기\' 설정을 켜면 효과가 줄어듭니다.'), S('추천 · 사카모토 류이치 「Merry Christmas Mr. Lawrence」를 틀어두고 플레이해 보세요.'), ...(JP ? [S('この日本語版は機械翻訳をもとにしているため、不自然な表現があるかもしれません。ご了承ください。')] : []), S('글꼴 · 갈무리(Galmuri) © 2019–2025 Lee Minseo · SIL Open Font License 1.1')]) { await showLine(l, { instant: true }); chk(T); }
   await new Promise(res => setChoices([{ label: '확인', onPick: res }, { label: JP ? '한국어로' : '日本語で', onPick: () => setLang(JP ? 'ko' : 'ja') }]));
   chk(T);
   clearText();

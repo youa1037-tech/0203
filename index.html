@@ -1592,7 +1592,7 @@ function endingsHTML() {
   const row = (k, name, n) => `<div class="er"><b>${k}</b><span class="nm">${name}</span><span>${n ? '■ ' + n + '회' : '□'}</span></div>`;
   return '<div class="endings"><div>종료 기록</div>' +
     row('A', '재시작', e.a) + row('B', '시스템 종료', e.b) + row('C', e.c ? '되감기지 않는 아침' : '▒▒▒▒▒▒', e.c) +
-    (e.c ? '' : '<p class="note" style="margin-top:6px">기억할 것. 다시 볼 것. 약속할 것.</p>') + '</div>';
+    (e.c ? '' : '<p class="frag" style="margin-top:6px">밑줄 친 말을 다섯 번. 재생 버튼을 한 번. 두 잔이냐는 질문엔 「응」.</p>') + '</div>';
 }
 function renderSys() {
   $('sysBody').innerHTML =

@@ -1652,7 +1652,8 @@ function renderSys() {
     `<div>글자 속도</div><div class="row" style="margin-top:4px"><button class="btn" id="spN" aria-pressed="${state.speed !== 'fast'}">보통</button><button class="btn" id="spF" aria-pressed="${state.speed === 'fast'}">빠르게</button></div>` +
     endingsHTML() +
     `<p class="frag" style="margin-top:16px">${state.run}번째 기록 · #${pad(state.loop)}</p>` +
-    '<div class="row" id="rstRow"><button class="btn warn" id="rst">기록 지우기</button></div>';
+    '<div class="row" id="rstRow"><button class="btn warn" id="rst">기록 지우기</button></div>' +
+    '<p class="frag" style="margin-top:16px">비공식 2차 창작입니다. Persona 5 Royal © ATLUS / SEGA<br>만든 사람 · <a href="https://x.com/nyamaker" target="_blank" rel="noopener" style="color:inherit">@nyamaker</a></p>';
   $('spN').onclick = () => { state.speed = 'normal'; save(); renderSys(); };
   $('spF').onclick = () => { state.speed = 'fast'; save(); renderSys(); };
   $('rst').onclick = () => {
@@ -1689,25 +1690,7 @@ $('ico-folder').onclick = () => {
 };
 
 /* ---------- start ---------- */
-function testSave() {
-  const s = DEF();
-  Object.assign(s, { loop: 4, stage: 'final', revealed: true, everRevealed: true, folder: true, letterDone: true, done58: true });
-  const h = (loop, day, choice, mem) => {
-    const ch = DAYMAP[day].choices({ loop, mem: 0 }).find(c => c.id === choice);
-    return { run: 1, loop, day, choice, label: ch ? ch.label : choice, mem, akechi: '' };
-  };
-  s.history = [h(1, '0114', 'bet', false), h(2, '0109', 'm', true), h(2, '0111', 'm', true), h(2, '0116', 'm', true), h(2, '0120', 'm', true), h(2, '0122', 'm', true)];
-  return s;
-}
 function start(data) {
-  let test = null;
-  try { test = new URLSearchParams(location.search).get('test'); } catch (e) {}
-  if (test === 'c') {
-    try { history.replaceState(null, '', location.pathname); } catch (e) {}
-    state = testSave(); save(); applyState();
-    flow(finalScene(fresh()));
-    return;
-  }
   const saved = data && data.v === 3 ? data : load();
   state = saved ? Object.assign(DEF(), saved) : DEF();
   applyState();

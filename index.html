@@ -295,8 +295,8 @@ const DAYS = [
   intro: c => c.loop === 1 ? [
       N('문 위의 종이 울린다. 가게를 열기엔 아직 이른 시간이다.'),
       N('창가에 눈꽃이 피어 있다. 밤새 눈이 온 모양이다.'),
-      A('좋은 아침. 아직 안 열었나? 뭐, 상관은 없지만. 커피 한 잔이면 돼.'),
-      N('그는 카운터 끝자리에 앉는다.'),
+      ...(c.reset ? [A('좋은 아침.'), N('그가 문간에서 멈춘다.'), A(c.reset === 'yes' ? '……거짓말은 없기로 했잖아.' : '……돌아왔네.'), N('그는 아무 일도 없었다는 듯 카운터 끝자리에 앉는다.')]
+        : [A('좋은 아침. 아직 안 열었나? 뭐, 상관은 없지만. 커피 한 잔이면 돼.'), N('그는 카운터 끝자리에 앉는다.')]),
       N('코트에 묻은 눈을 털지도 않고 장갑부터 벗어 가지런히 내려놓는다.'),
       A('사쿠라 씨는?'),
       J('아직 안 나오셨어.'),
@@ -726,7 +726,7 @@ const fmtBroken = (m, d) => `${m}/  `;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const runHist = () => state.history.filter(h => h.run === state.run);
 const memCount = () => runHist().filter(h => h.mem).length;
-const ctx = () => ({ loop: state.loop, mem: memCount() });
+const ctx = () => ({ loop: state.loop, mem: memCount(), reset: state.loop === 1 && !state.aMode ? state.resetFlag : null });
 
 /* ---------- flow control ---------- */
 class Abort extends Error {}
@@ -1068,6 +1068,7 @@ async function choose(i, day, ch, T) {
   const out = day.outro(c, ch);
   if (out.length) { await waitAdvance(T); await runLines(out, T); }
   state.history.push({ run: state.run, loop: state.loop, day: day.key, choice: ch.id, label: ch.label, mem: !!ch.mem, akechi: capture || '' });
+  if (day.key === '0109' && state.resetFlag) state.resetFlag = null;
   const msg = day.msg ? day.msg(c, ch) : null;
   if (msg) { state.msgs.push({ run: state.run, loop: state.loop, day: day.key, text: msg }); state.unread++; toast('새 메시지 · 아케치'); }
   applyState();
@@ -1231,6 +1232,7 @@ async function finalScene(T) {
     await waitAdvance(T);
     await runLines([A('다트 내기, 기억해? 질문 하나 아껴두었지.'), A('2월 3일에도, 커피는 두 잔 내릴 거야?')], T);
     const p3 = await ask([{ label: '응' }, { label: '……' }], T);
+    state.betYes = p3.i === 0; save();
     await showLine(J(p3.i === 0 ? '응' : '……')); chk(T); await waitAdvance(T);
     await runLines([p3.i === 0 ? A('……거짓말은 없기로 했다. 기억해 둘게.') : A('대답은 안 해도 돼. 얼굴에 다 써 있거든.')], T);
   }
@@ -1386,7 +1388,7 @@ async function showEndB(T, live) {
   row.innerHTML = '<button class="btn" id="endDiary">일기 보기</button><button class="btn" id="endNew">처음부터</button>';
   e.append(row);
   $('endDiary').onclick = () => openWin('win-diary');
-  $('endNew').onclick = newRun;
+  $('endNew').onclick = confirmNew;
   await sleep(live && !reduced ? 900 : 0);
   end.classList.add('show'); row.classList.add('show');
 }
@@ -1414,8 +1416,23 @@ async function endingC(T, e) {
   state.cDone = true; save();
 }
 
+function confirmNew() {
+  state.resetWarn = (state.resetWarn || 0) + 1; save();
+  const lines = state.resetWarn === 1
+    ? [state.betYes ? '아케치와 약속했다. 2월 3일에도, 커피는 두 잔.' : '아케치와 약속했다. 내일로 가겠다고.', ...(state.cDone ? ['남겨둔 건 내가 먹기로 했다.'] : [])]
+    : ['……또?'];
+  $('alertTitle').textContent = '시스템';
+  $('alertBody').innerHTML = lines.map(t => `<p class="quote">${esc(t)}</p>`).join('') +
+    '<p class="sub">처음부터 다시 열면 2월 3일은 기록에서 지워집니다.</p><div class="row"><button class="btn" id="rsNo">그대로 둔다</button><button class="btn" id="rsYes">그래도 연다</button></div>';
+  $('rsNo').onclick = () => { $('win-alert').hidden = true; };
+  $('rsYes').onclick = () => { $('win-alert').hidden = true; state.resetFlag = state.betYes ? 'yes' : 'other'; newRun(); };
+  openWin('win-alert');
+  $('rsNo').focus();
+}
+
 function newRun() {
   clearInterval(realClock);
+  state.betYes = false;
   state.run++; state.loop = 1; state.day = 0; state.revealed = false; state.folder = false; state.unread = 0;
   state.letterDone = false; state.done58 = false; state.aMode = false; state.aCount = 0; state.idle = {}; state.cOK = false; state.cRead = false; state.cDone = false;
   $('endp').hidden = true; $('titlep').hidden = true; $('tbMsg').hidden = true;

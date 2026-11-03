@@ -124,6 +124,8 @@ button:focus-visible{outline:2px dashed var(--wound);outline-offset:1px}
 .endp.night{background:var(--ink);color:var(--paper)}
 .doc .unred{color:var(--ink-soft)}
 .ln.cut{opacity:.55;animation:cutj .2s steps(2) 1}
+.chip.tick{animation:tk .3s steps(1) 1}
+@keyframes tk{0%{background:var(--ink);color:var(--paper)}}
 @keyframes cutj{50%{transform:translateX(3px)}}
 .ln-over{position:relative;margin-top:-17px;background:var(--ink);box-shadow:0 -5px 0 var(--ink)}
 .endp p.sysl{font:12px/20px var(--f-ui);border-left:4px solid currentColor;padding-left:8px}
@@ -1156,6 +1158,7 @@ async function choose(i, day, ch, T) {
     setChoices([{ label: '하루를 끝낸다', onPick: () => flow(play(i + 1)) }]);
     return;
   }
+  $('tbClock').textContent = '23:59';
   await waitAdvance(T);
   if (state.loop <= 2) { await rewind(T); }
   else { await stutterRewind(T); }
@@ -1839,6 +1842,15 @@ function snowTick(t) {
   for (const f of flakes) snowX.fillRect(Math.round(f.x), Math.round(f.y), f.s, cfg && cfg.streak ? 3 : f.s);
 }
 requestAnimationFrame(snowTick);
+
+/* ---------- 23:59 that never turns ---------- */
+setInterval(() => {
+  const el = $('tbClock'), t = el.textContent;
+  if (t.slice(0, 5) !== '23:59' || state.stage === 'endB' || screen.classList.contains('ended')) return;
+  if (t === '23:59') { el.textContent = '23:59:58'; return; }
+  el.textContent = '23:59:59';
+  el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+}, 1000);
 
 let awayLine = false;
 document.addEventListener('visibilitychange', () => {

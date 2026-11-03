@@ -1421,10 +1421,11 @@ async function showEndB(T, live) {
   const lines = ['밤이 지나간다.', '§' + fmtDate(2, 13), '소지로의 차를 타고 르블랑으로 돌아온다. 문 위의 종이 울린다.', '모두 돌아간 뒤.', '카운터 끝자리는 비어 있다.', '커피를 내린다. 컵을 하나만 꺼냈다가, 하나를 더 꺼낸다.', '^3월|10:20|그리고 3월.',
     '짐 가방을 들고 내려오자 소지로가 카운터에서 잔을 닦고 있다.',
     ...(state.cOK ? ['카운터 끝자리에 빈 잔이 하나 놓여 있다.', '「손님 왔었어요?」', '「조금 전에. 열기도 전인데 한 잔만 달라더군.」', '「장갑을 한쪽 두고 갔어. 칠칠맞기는.」', '검은 장갑이다. 카운터 끝자리가 아직 미지근하다.',
-      '도쿄를 떠나는 열차에 오른다.', '문이 닫히기 직전, 건너편 플랫폼 끝에서 누군가 손을 든다. 한 박자 늦게.', '입 모양이 보인다. 이번엔 들리지 않아도 안다.', '「내일 보자.」', '다시 보았을 때는 사람들 사이로 사라지고 없다.', '~열차가 움직인다. 이번엔 되감기지 않는다.']
+      '「가냐.」', '장갑을 코트 주머니에 넣는다. 문 위의 종이 울린다.', '@역 · 오전', '그가 열차를 몇 대나 그냥 보냈던 플랫폼이다.',
+      '도쿄를 떠나는 열차에 오른다.', '문이 닫히기 직전, 건너편 플랫폼 끝에서 누군가 손을 든다. 한 박자 늦게.', '입 모양이 보인다. 이번엔 들리지 않아도 안다.', '`「내일 보자.」', '다시 보았을 때는 사람들 사이로 사라지고 없다.', '~열차가 움직인다. 이번엔 되감기지 않는다.']
     : ['「가냐.」', '카운터 위에 잔이 두 개 놓여 있다. 소지로가 하나를 슬쩍 치운다.', '「……버릇이 무섭긴 하네. 자꾸 두 잔 내릴 뻔한다니까.」',
       '도쿄를 떠나는 열차에 오른다. 창밖으로 플랫폼이 멀어진다.', '벤치에는 아무도 없다.'])];
-  e.innerHTML = `<div class="date">${fmtDate(2, 3)}</div>` + lines.map(t => t[0] === '§' ? `<p class="date2" data-tb="${esc(t.slice(1))}">${esc(t.slice(1))}</p>` : t[0] === '^' ? (([d, k, x]) => `<p data-tb="${esc(d)}" data-clock="${esc(k)}">${esc(x)}</p>`)(t.slice(1).split('|')) : t[0] === '~' ? `<p data-snow="resume">${esc(t.slice(1))}</p>` : `<p>${esc(t)}</p>`).join('');
+  e.innerHTML = `<div class="date">${fmtDate(2, 3)}</div>` + lines.map(t => t[0] === '§' ? `<p class="date2" data-tb="${esc(t.slice(1))}">${esc(t.slice(1))}</p>` : t[0] === '^' ? (([d, k, x]) => `<p data-tb="${esc(d)}" data-clock="${esc(k)}">${esc(x)}</p>`)(t.slice(1).split('|')) : t[0] === '~' ? `<p data-snow="resume">${esc(t.slice(1))}</p>` : t[0] === '@' ? `<p class="date2">${esc(t.slice(1))}</p>` : t[0] === '`' ? `<p data-type="1">${esc(t.slice(1))}</p>` : `<p>${esc(t)}</p>`).join('');
   const cNight = state.cOK && !state.cDone;
   e.classList.toggle('night', cNight);
   if (cNight) { snowOverride = 'frozen'; $('snow').style.zIndex = '16'; }
@@ -1433,10 +1434,18 @@ async function showEndB(T, live) {
   const tbAt = p => { if (p.dataset.tb) $('tbDate').textContent = p.dataset.tb; if (p.dataset.clock) $('tbClock').textContent = p.dataset.clock; if (p.dataset.snow && cNight) snowOverride = p.dataset.snow; };
   if (!live) { ps.forEach(p => { p.classList.add('show'); tbAt(p); }); }
   else {
+    const gap = p => reduced ? 0 : !state.cOK ? 1000 : p.classList.contains('date2') ? 2800 : 1900;
     for (const p of ps) {
-      await sleep(reduced ? 0 : 1000); if (T !== token) return;
-      p.classList.add('show');
+      await sleep(gap(p)); if (T !== token) return;
+      if (p.dataset.type && !reduced) {
+        const full = p.textContent;
+        p.textContent = ''; p.classList.add('show');
+        for (const ch of full) { p.textContent += ch; await sleep(360); if (T !== token) return; }
+        await sleep(900); if (T !== token) return;
+      } else p.classList.add('show');
       tbAt(p);
+      const need = p.offsetTop + p.offsetHeight - e.clientHeight + 24;
+      if (need > e.scrollTop) e.scrollTo({ top: need, behavior: reduced ? 'auto' : 'smooth' });
     }
   }
   if (state.cOK) {

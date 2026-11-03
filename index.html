@@ -1173,7 +1173,7 @@ async function play58() {
 }
 
 /* ---------- confrontation ---------- */
-async function finalScene(T) {
+async function finalScene(T, resumed) {
   state.stage = 'final'; save();
   clearText();
   setBar(LASTDAY, '23:59');
@@ -1187,6 +1187,7 @@ async function finalScene(T) {
   const knew = dart ? '……다트가 빗나간 날 알았어. 너도 어렴풋이 기억한다는 거.' : (mc >= 3 && firstMem) ? `……${KNOWN_DAY[firstMem.day]} 알았어. 너도 어렴풋이 기억한다는 거.` : null;
   await runLines([
     N('다락방. 2월 2일, 23시 59분. 아케치가 계단 끝에 서 있다.'),
+    ...w(!!resumed, A('……나가면 끝날 줄 알았어?')),
     A('……읽었구나.'),
     A('취미 나쁘네. 남의 일기장을 끝까지 들춰보고.'),
     ...w(!!habit, A(`하긴, 넌 1월 9일마다 똑같이 「${habit}」만 고르던 녀석이니까. 집요한 건 알아줘야지.`)),
@@ -1257,7 +1258,12 @@ async function aScene(T) {
   openShutdown(T);
 }
 
+let shutT1 = null, shutT2 = null;
+const hesitating = () => state.stage === 'final' && !$('win-alert').hidden && !typing;
 function openShutdown(T) {
+  clearTimeout(shutT1); clearTimeout(shutT2);
+  shutT1 = setTimeout(() => { if (hesitating()) showLine(A('……천천히 해. 시간은 많잖아. 너한테는.')); }, 30000);
+  shutT2 = setTimeout(() => { if (hesitating()) showLine(A('익숙하네, 그 망설임.')); }, 60000);
   state.stage = 'final'; save();
   $('alertTitle').textContent = '시스템';
   const body = $('alertBody');
@@ -1272,7 +1278,7 @@ function openShutdown(T) {
     const q = k === 'a' ? '……정말 지독하네, 너는.' : full ? '……여기까지네. 둘 다.' : '드디어 그 얼굴이네. 잘 가, 렌.';
     const s = k === 'a' ? '1월 9일로 돌아갑니다. 기록은 남습니다.' : full ? '되감을 기록이 남아 있지 않습니다. 2월 3일로 넘어갑니다.' : '2월 3일로 넘어갑니다. 되돌릴 수 없습니다.';
     body.innerHTML = `<p class="quote">「${esc(q)}」</p><p class="sub">${s}</p><div class="row"><button class="btn" id="opOk">확인</button><button class="btn" id="opNo">취소</button></div>`;
-    $('opOk').onclick = () => { $('win-alert').hidden = true; flow(k === 'a' ? endingA(T) : endingB(T)); };
+    $('opOk').onclick = () => { clearTimeout(shutT1); clearTimeout(shutT2); $('win-alert').hidden = true; flow(k === 'a' ? endingA(T) : endingB(T)); };
     $('opNo').onclick = ask2;
     $('opOk').focus();
   };
@@ -1610,11 +1616,20 @@ function start(data) {
   if (s === 'day') flow(play(state.day));
   else if (s === 'stuck') flow(stuck());
   else if (s === 'await' || s === 'm58') flow(awaitFinal());
-  else if (s === 'final') flow(finalScene(fresh()));
+  else if (s === 'final') flow(finalScene(fresh(), true));
   else if (s === 'titleA') showTitle();
   else if (s === 'endB') { $('tbDate').textContent = fmtDate(2, 3); flow(showEndB(null, false)); }
   else flow(boot());
 }
+let awayLine = false;
+document.addEventListener('visibilitychange', () => {
+  const tense = state.stage === 'final' || state.stage === 'await' || (state.stage === 'day' && (state.aMode || dayOrder()[state.day] === '0202'));
+  if (document.hidden) { if (tense) { document.title = '……어디 가?'; awayLine = true; } return; }
+  document.title = '유예';
+  if (!awayLine) return;
+  awayLine = false;
+  if (!typing && (choicesEl.children.length || !$('win-alert').hidden)) showLine(A('……왔네.'));
+});
 window.__yuye = { get state() { return state; } };
 try { window.claude?.hot?.snapshot?.(() => JSON.parse(JSON.stringify(state))); } catch (e) {}
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});

@@ -1326,8 +1326,9 @@ function showTitle(T) {
 
 async function endingB(T) {
   chk(T);
-  state.endings.b++; state.stage = 'endB';
-  state.cOK = memCount() >= 5 && state.done58;
+  state.stage = 'endB';
+  state.cOK = memCount() >= 5 && state.done58 && !!state.betYes;
+  if (!state.cOK) state.endings.b++;
   save();
   clearText();
   const rows = runHist().filter(h => !h.one).map(h => `#${pad(h.loop)}  ${fmtShort(DAYMAP[h.day].m, DAYMAP[h.day].d)}  ${h.label}  「${strip(h.akechi)}」`);
@@ -1370,8 +1371,11 @@ async function showEndB(T, live) {
   $('tbLoop').textContent = '#' + pad(state.loop);
   const e = $('endp');
   const lines = ['밤이 지나간다.', '§' + fmtDate(2, 13), '소지로의 차를 타고 르블랑으로 돌아온다. 문 위의 종이 울린다.', '모두 돌아간 뒤.', '카운터 끝자리는 비어 있다.', '커피를 내린다. 컵을 하나만 꺼냈다가, 하나를 더 꺼낸다.', '^3월|10:20|그리고 3월.',
-    '짐 가방을 들고 내려오자 소지로가 카운터에서 잔을 닦고 있다.', '「가냐.」', '카운터 위에 잔이 두 개 놓여 있다. 소지로가 하나를 슬쩍 치운다.', '「……버릇이 무섭긴 하네. 자꾸 두 잔 내릴 뻔한다니까.」',
-    '도쿄를 떠나는 열차에 오른다. 창밖으로 플랫폼이 멀어진다.', '벤치에는 아무도 없다.'];
+    '짐 가방을 들고 내려오자 소지로가 카운터에서 잔을 닦고 있다.',
+    ...(state.cOK ? ['카운터 끝자리에 빈 잔이 하나 놓여 있다.', '「손님 왔었어요?」', '「조금 전에. 열기도 전인데 한 잔만 달라더군.」', '「장갑을 한쪽 두고 갔어. 칠칠맞기는.」', '검은 장갑이다. 카운터 끝자리가 아직 미지근하다.',
+      '도쿄를 떠나는 열차에 오른다.', '문이 닫히기 직전, 건너편 플랫폼 끝에서 누군가 손을 든다. 한 박자 늦게.', '입 모양이 보인다. 이번엔 들리지 않아도 안다.', '「내일 보자.」', '다시 보았을 때는 사람들 사이로 사라지고 없다.', '열차가 움직인다. 이번엔 되감기지 않는다.']
+    : ['「가냐.」', '카운터 위에 잔이 두 개 놓여 있다. 소지로가 하나를 슬쩍 치운다.', '「……버릇이 무섭긴 하네. 자꾸 두 잔 내릴 뻔한다니까.」',
+      '도쿄를 떠나는 열차에 오른다. 창밖으로 플랫폼이 멀어진다.', '벤치에는 아무도 없다.'])];
   e.innerHTML = `<div class="date">${fmtDate(2, 3)}</div>` + lines.map(t => t[0] === '§' ? `<p class="date2" data-tb="${esc(t.slice(1))}">${esc(t.slice(1))}</p>` : t[0] === '^' ? (([d, k, x]) => `<p data-tb="${esc(d)}" data-clock="${esc(k)}">${esc(x)}</p>`)(t.slice(1).split('|')) : `<p>${esc(t)}</p>`).join('');
   e.hidden = false;
   const ps = [...e.querySelectorAll('p')];
@@ -1391,10 +1395,11 @@ async function showEndB(T, live) {
   }
   const end = document.createElement('p'); end.textContent = '— 기록 끝 —'; e.append(end);
   const row = document.createElement('div'); row.className = 'row';
-  row.innerHTML = '<button class="btn" id="endDiary">일기 보기</button><button class="btn" id="endNew">처음부터</button>';
+  row.innerHTML = '<button class="btn" id="endDiary">일기 보기</button><button class="btn" id="endNew">처음부터</button>' + (state.cOK ? '<span style="font-size:12px;align-self:center">되감을 이유가 없습니다</span>' : '');
   e.append(row);
   $('endDiary').onclick = () => openWin('win-diary');
-  $('endNew').onclick = confirmNew;
+  if (state.cOK) { $('endNew').disabled = true; $('endNew').style.textDecoration = 'line-through'; }
+  else $('endNew').onclick = confirmNew;
   await sleep(live && !reduced ? 900 : 0);
   end.classList.add('show'); row.classList.add('show');
 }
@@ -1425,7 +1430,7 @@ async function endingC(T, e) {
 function confirmNew() {
   state.resetWarn = (state.resetWarn || 0) + 1; save();
   const lines = state.resetWarn === 1
-    ? [state.betYes ? '아케치와 약속했다. 2월 3일에도, 커피는 두 잔.' : '아케치와 약속했다. 내일로 가겠다고.', ...(state.cDone ? ['남겨둔 건 내가 먹기로 했다.'] : [])]
+    ? [state.betYes ? '아케치와 약속했다. 2월 3일에도, 커피는 두 잔.' : '아케치와 약속했다. 내일로 가겠다고.']
     : ['……또?'];
   $('alertTitle').textContent = '시스템';
   $('alertBody').innerHTML = lines.map(t => `<p class="quote">${esc(t)}</p>`).join('') +
